@@ -110,8 +110,9 @@ def render(db_path: str | None = None) -> None:
     for a in summary.asset_analyses:
         ret = a.cumulative_return
         color = "#00c853" if ret >= 0 else "#ff1744"
+        bg = "#e8f5e9" if ret >= 0 else "#ffebee"
         cards_html += (
-            f'<div style="display:inline-block;background:#f8f9fa;padding:12px 20px;'
+            f'<div style="display:inline-block;background:{bg};padding:12px 20px;'
             f'border-radius:8px;text-align:center;min-width:160px;'
             f'flex:1 1 calc(25% - 12px)">'
             f'<div style="color:#666;font-size:13px">{a.asset_type}</div>'
