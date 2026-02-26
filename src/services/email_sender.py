@@ -49,29 +49,35 @@ def send_monthly_report(
     subject = _build_subject(report_month, summary)
     html_body = build_report_html(summary, report_month)
 
-    # 构建邮件
-    msg = MIMEMultipart("alternative")
+    # 构建邮件（直接用 MIMEText，163邮箱对 MIMEMultipart 兼容性更好）
+    msg = MIMEText(html_body, "html", "utf-8")
     msg["Subject"] = subject
     msg["From"] = smtp_user
     msg["To"] = recipient
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     # 发送（端口465用SSL直连，其他端口用STARTTLS）
+    import ssl
+    context = ssl.create_default_context()
+    server = None
     try:
         if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
-                server.login(smtp_user, smtp_password)
-                server.send_message(msg)
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=60, context=context)
         else:
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_password)
-                server.send_message(msg)
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=60)
+            server.starttls(context=context)
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_user, recipient, msg.as_string())
         print(f"[成功] 报告邮件已发送至 {recipient}")
         return True
     except Exception as e:
         print(f"[错误] 邮件发送失败: {e}")
         return False
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
 
 
 def _build_subject(report_month: str, summary: PortfolioSummary) -> str:
