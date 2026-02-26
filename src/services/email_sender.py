@@ -146,22 +146,26 @@ def build_report_html(summary: PortfolioSummary, report_month: str) -> str:
     best_section = ""
     if summary.best_performer and summary.best_performer.monthly_return is not None:
         b = summary.best_performer
-        best_section = f"""
-        <div style="display:inline-block;background:#e8f5e9;padding:12px 20px;border-radius:8px;margin-right:16px">
-            <div style="color:#666;font-size:13px">本月最佳</div>
-            <div style="font-size:18px;font-weight:600">{b.name}</div>
-            <div style="color:#00c853;font-size:16px">{b.monthly_return:+.2%}</div>
-        </div>"""
+        best_section = (
+            f'<div style="display:inline-block;background:#e8f5e9;padding:12px 20px;'
+            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
+            f'<div style="color:#666;font-size:13px">本月最佳</div>'
+            f'<div style="font-size:18px;font-weight:600">{b.name}</div>'
+            f'<div style="color:#00c853;font-size:16px">{b.monthly_return:+.2%}</div>'
+            f'</div>'
+        )
 
     worst_section = ""
     if summary.worst_performer and summary.worst_performer.monthly_return is not None:
         w = summary.worst_performer
-        worst_section = f"""
-        <div style="display:inline-block;background:#ffebee;padding:12px 20px;border-radius:8px">
-            <div style="color:#666;font-size:13px">本月最差</div>
-            <div style="font-size:18px;font-weight:600">{w.name}</div>
-            <div style="color:#ff1744;font-size:16px">{w.monthly_return:+.2%}</div>
-        </div>"""
+        worst_section = (
+            f'<div style="display:inline-block;background:#ffebee;padding:12px 20px;'
+            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
+            f'<div style="color:#666;font-size:13px">本月最差</div>'
+            f'<div style="font-size:18px;font-weight:600">{w.name}</div>'
+            f'<div style="color:#ff1744;font-size:16px">{w.monthly_return:+.2%}</div>'
+            f'</div>'
+        )
 
     html = f"""
 <!DOCTYPE html>
