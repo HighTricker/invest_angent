@@ -13,7 +13,9 @@ from pathlib import Path
 
 from frontend.texts import zh_CN as T
 from frontend.pages import dashboard, manage, history
-from src.models.database import init_db
+from src.models.database import init_db, get_connection
+from src.services.analyzer import analyze_portfolio
+from src.services.email_sender import send_monthly_report
 
 # ---- 页面配置 ----
 st.set_page_config(
@@ -37,6 +39,37 @@ page = st.sidebar.radio(
     [T.NAV_DASHBOARD, T.NAV_MANAGE, T.NAV_HISTORY],
     label_visibility="collapsed",
 )
+
+# ---- 侧边栏：邮件报告 ----
+st.sidebar.markdown("---")
+st.sidebar.subheader(T.SIDEBAR_EMAIL_SECTION)
+
+# 获取可用月份
+conn = get_connection()
+_dates = conn.execute(
+    "SELECT DISTINCT record_date FROM monthly_prices ORDER BY record_date"
+).fetchall()
+conn.close()
+_date_list = [row["record_date"] for row in _dates]
+
+if _date_list:
+    _selected = st.sidebar.selectbox(
+        "报告月份", _date_list, index=len(_date_list) - 1, key="email_date"
+    )
+    if st.sidebar.button(T.SIDEBAR_EMAIL_BUTTON, use_container_width=True):
+        with st.sidebar:
+            with st.spinner(T.SIDEBAR_EMAIL_SENDING):
+                summary = analyze_portfolio(_selected)
+                if summary.asset_analyses:
+                    result = send_monthly_report(summary, _selected)
+                    if result:
+                        st.success(T.SIDEBAR_EMAIL_SUCCESS)
+                    else:
+                        st.error(T.SIDEBAR_EMAIL_FAIL)
+                else:
+                    st.warning(T.SIDEBAR_EMAIL_NO_DATA)
+else:
+    st.sidebar.info(T.SIDEBAR_EMAIL_NO_DATA)
 
 # ---- 路由 ----
 if page == T.NAV_DASHBOARD:
