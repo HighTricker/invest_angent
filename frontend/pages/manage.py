@@ -1,7 +1,7 @@
 """
 标的管理页面。
 
-支持添加新标的、设置投资金额（加仓/减仓）、查看当前持仓。
+支持添加新标的、设置投资金额（加仓/减仓）、查看当前持仓、手动采集价格。
 """
 
 import streamlit as st
@@ -10,6 +10,7 @@ from datetime import date, datetime
 
 from frontend.texts import zh_CN as T
 from src.models.database import get_connection
+from src.services.collector import collect_all
 
 
 def render(db_path: str | None = None) -> None:
@@ -19,6 +20,8 @@ def render(db_path: str | None = None) -> None:
     _render_add_asset(db_path)
     st.markdown("---")
     _render_invest(db_path)
+    st.markdown("---")
+    _render_collect(db_path)
     st.markdown("---")
     _render_positions(db_path)
 
@@ -179,6 +182,55 @@ def _update_position(
         conn.commit()
     finally:
         conn.close()
+
+
+def _render_collect(db_path: str | None) -> None:
+    """渲染「数据采集」区域，支持手动选择月份并采集价格。"""
+    st.subheader(T.COLLECT_SECTION)
+
+    conn = get_connection(db_path)
+    try:
+        asset_count = conn.execute(
+            "SELECT COUNT(*) as cnt FROM assets WHERE is_active = 1"
+        ).fetchone()["cnt"]
+    finally:
+        conn.close()
+
+    if asset_count == 0:
+        st.info(T.COLLECT_NO_ASSETS)
+        return
+
+    # 生成可选月份列表：从 2025-12 到当前月份
+    today = date.today()
+    months = []
+    year, month = 2025, 12
+    while (year, month) <= (today.year, today.month):
+        months.append(f"{year}-{month:02d}-01")
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+
+    selected_dates = st.multiselect(
+        T.COLLECT_SELECT_DATES,
+        options=months,
+        default=[months[-1]] if months else [],
+    )
+
+    if st.button(T.COLLECT_BUTTON, use_container_width=True):
+        if not selected_dates:
+            return
+
+        with st.spinner(T.COLLECT_RUNNING):
+            total_success = 0
+            total_skip = 0
+            for d in sorted(selected_dates):
+                results = collect_all(d, db_path)
+                success = sum(1 for v in results.values() if v is not None)
+                total_success += success
+                total_skip += len(results) - success
+
+        st.success(T.COLLECT_SUCCESS.format(success=total_success, skip=total_skip))
 
 
 def _render_positions(db_path: str | None) -> None:
