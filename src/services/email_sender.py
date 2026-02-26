@@ -126,6 +126,22 @@ def build_report_html(summary: PortfolioSummary, report_month: str) -> str:
             <td style="text-align:right;color:{monthly_color}">{monthly_str}</td>
         </tr>"""
 
+    # 各标的涨跌卡片（涨绿底，跌红底）
+    asset_cards = '<div style="margin:20px 0">'
+    for i, a in enumerate(summary.asset_analyses):
+        ret = a.cumulative_return
+        bg = "#e8f5e9" if ret >= 0 else "#ffebee"
+        color = "#00c853" if ret >= 0 else "#ff1744"
+        asset_cards += (
+            f'<div style="display:inline-block;background:{bg};padding:12px 20px;'
+            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
+            f'<div style="color:#666;font-size:13px">{a.asset_type}</div>'
+            f'<div style="font-size:18px;font-weight:600">{a.name}</div>'
+            f'<div style="color:{color};font-size:16px">{ret:+.2%}</div>'
+            f'</div>'
+        )
+    asset_cards += '</div>'
+
     # 最佳/最差
     best_section = ""
     if summary.best_performer and summary.best_performer.monthly_return is not None:
@@ -189,6 +205,9 @@ def build_report_html(summary: PortfolioSummary, report_month: str) -> str:
 
     <!-- 最佳/最差 -->
     {best_section}{worst_section}
+
+    <!-- 各标的涨跌卡片 -->
+    {asset_cards}
 
     <!-- 标的明细 -->
     <h2 style="color:#16213e;margin-top:28px;border-bottom:2px solid #e2e8f0;padding-bottom:8px">
