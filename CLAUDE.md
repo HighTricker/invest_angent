@@ -4,121 +4,120 @@
 
 一个投资训练追踪系统。用户通过前端界面录入投资标的和金额，系统每月自动获取价格、计算收益、发送邮件报告。面向初期投资者，强调月频纪律性查看，不做日频推送。
 
+## 当前进度
+
+### 已完成（Phase 1 核心功能全部完成）
+- [x] 数据库设计（4张表：assets, monthly_prices, positions, position_changes）
+- [x] 价格采集服务（yfinance + akshare，覆盖11个标的）
+- [x] 数据分析服务（累计/月度涨跌幅、仓位价值、组合汇总）
+- [x] 数据采集入库（collector.py，连接价格获取与数据库）
+- [x] Streamlit 前端面板（代码/样式/文案三层分离）
+- [x] 邮件报告发送（163 SMTP SSL 端口465，已验证）
+- [x] 定时任务串联（run_monthly.py）
+- [x] 11个标的已录入，每个 $1 初始仓位，2025-12 ~ 2026-02 历史数据已采集
+- [x] 一键启动 bat 脚本（启动面板.bat）
+- [x] 侧边栏一键发送邮件按钮
+
+### 待开发（后期扩展）
+- [ ] 部署到云服务器 + cron 定时任务
+- [ ] 投资资讯推送
+- [ ] 投资思维训练模块
+- [ ] 前端迁移：Streamlit → Flask + React（Phase 2）
+
 ## 技术栈
 
 - **语言**: Python 3.11+
-- **前端**: Streamlit（Phase 1）→ Flask + React（Phase 2，后期迁移）
-- **数据存储**: SQLite
-- **数据获取**: yfinance（美股/港股/加密货币）+ 其他 API（黄金/中国国债，待定）
-- **邮件**: SMTP（用自有邮箱发送）
-- **定时任务**: cron（云服务器 Linux 环境）
-- **部署**: 云服务器
-- **AI 框架**: 待定
+- **前端**: Streamlit（Phase 1）→ Flask + React（Phase 2）
+- **数据存储**: SQLite（data/invest.db，已被 .gitignore 忽略）
+- **数据获取**: yfinance（美股/港股/加密货币/美国国债）+ akshare（AU9999黄金/中国国债）
+- **邮件**: SMTP SSL（163邮箱，端口465，配置在 .env）
+- **定时任务**: cron（云服务器部署时配置）
 - **包管理**: pip + requirements.txt
 
-### 架构原则（分层设计，便于后期 Streamlit → Flask+React 迁移）
-- **UI 层**：仅负责展示和交互（Streamlit 页面），可整体替换
-- **业务逻辑层**：price_fetcher / analyzer / email_sender，纯 Python 模块，不依赖任何 UI 框架
-- **数据层**：SQLite，通过统一的数据访问模块操作
+### 架构原则（分层设计，便于后期迁移）
+- **UI 层**：Streamlit 页面，可整体替换
+- **业务逻辑层**：price_fetcher / analyzer / collector / email_sender，纯 Python 模块
+- **数据层**：SQLite，通过 database.py 统一操作
 
-## 核心功能
+## 投资标的列表（11个，每个 $1 初始仓位）
 
-### 1. 前端界面 — 投资管理面板
-- 录入/编辑投资标的（股票代码、名称、资产类别）
-- 设定每个标的的投资金额（灵活输入，如 1 美元或 50 美元）
-- 加仓/减仓操作记录，变动时有记录和提示
-- 展示投资组合总览、历史走势图表
-
-### 2. 价格数据采集（每月2日自动执行）
-- 获取每个标的上月最后交易日的收盘价
-- 支持多种资产类别的数据源：
-  - 美股：GOOGL, AMZN, META, AAPL, NVDA
-  - 港股/中概：Tencent (0700.HK), Alibaba (9988.HK/BABA)
-  - 黄金：AU9999（国际版黄金）
-  - 债券：10年期美国国债收益率、10年期中国国债收益率
-  - 加密货币：BTC/USD
-- 价格获取方式：API 调用（具体方案待选型）
-
-### 3. 数据分析与计算
-- **累计涨跌幅**：相对初始买入价格的总涨跌百分比
-- **月度涨跌幅**：相对上月价格的月度变化
-- **当前仓位**：初始投资金额 × (1 + 累计涨跌幅)
-- **整体基金表现**：所有标的的加权汇总
-
-### 4. 邮件报告（每月2日，数据采集后发送）
-- 每个标的的增长情况（累计 + 月度）
-- 整体投资组合的总市值、总收益率
-- 表现最好/最差的标的
-- 简洁清晰，适合快速浏览
-
-### 5. 后期扩展（暂不实现）
-- 投资资讯推送
-- 投资思维训练模块
-
-## 投资标的列表（当前）
-
-| 编号 | 标的 | 代码 | 资产类别 | 基准价格（2025-12） |
-|------|------|------|----------|---------------------|
-| 1 | Google | GOOGL | 美股 | 313 |
-| 2 | Amazon | AMZN | 美股 | 233.88 |
-| 3 | Facebook | META | 美股 | 640.87 |
-| 4 | Apple | AAPL | 美股 | 283.1 |
-| 5 | Tencent | 0700.HK | 港股 | 619.5 |
-| 6 | Alibaba | BABA | 中概 | 164.26 |
-| 7 | NVDA | NVDA | 美股 | 179.91 |
-| 8 | 国际版黄金 | AU9999 | 大宗商品 | 958.46 |
-| 9 | 10年期美国国债 | ^TNX | 债券 | 4.0962 |
-| 10 | 10年期中国国债 | — | 债券 | 1.827 |
-| 11 | 比特币 | BTC-USD | 加密货币 | 86309.1 |
-
-## 数据结构说明（源自投资跟踪表格.xlsx）
-
-表格按月记录，每个标的占 3 列：
-- **投资标的及对应日期价格** — 月初（1日）收盘价
-- **涨跌幅** — 相对基准价格的涨跌比例
-- **当前仓位** — 投资金额 × (1 + 涨跌幅)
-
-时间范围：2025-12（基准月）→ 2027-01，共 14 个月
+| 标的 | 代码 | 资产类别 | 基准价格（2025-12） | 数据源 |
+|------|------|----------|---------------------|--------|
+| Google | GOOGL | 美股 | 313 | yfinance |
+| Amazon | AMZN | 美股 | 233.88 | yfinance |
+| Facebook | META | 美股 | 640.87 | yfinance |
+| Apple | AAPL | 美股 | 283.1 | yfinance |
+| Tencent | 0700.HK | 港股 | 619.5 | yfinance |
+| Alibaba | BABA | 中概 | 164.26 | yfinance |
+| NVDA | NVDA | 美股 | 179.91 | yfinance |
+| 国际版黄金 | AU9999 | 大宗商品 | 958.46 | akshare |
+| 10年期美国国债 | ^TNX | 债券 | 4.0962 | yfinance |
+| 10年期中国国债 | CN10Y | 债券 | 1.827 | akshare |
+| 比特币 | BTC-USD | 加密货币 | 86309.1 | yfinance |
 
 ## 项目结构
 
 ```
 invest_anget/
-├── CLAUDE.md              # 项目说明（本文件）
-├── 投资跟踪表格.xlsx       # 原始表格（参考用）
+├── CLAUDE.md                      # 项目说明（本文件）
+├── .env                           # SMTP 配置（不提交 Git）
+├── .env.example                   # 配置模板
+├── requirements.txt               # Python 依赖
+├── run_monthly.py                 # 定时任务入口脚本
+├── 启动面板.bat                    # 双击启动 Streamlit
+├── 投资跟踪表格.xlsx               # 原始表格（参考用）
 ├── src/
-│   ├── app.py             # Web 应用入口
-│   ├── agents/            # Agent 逻辑
+│   ├── models/
+│   │   └── database.py            # 数据库初始化与连接
 │   ├── services/
-│   │   ├── price_fetcher.py   # 价格数据采集
-│   │   ├── analyzer.py        # 数据分析与计算
-│   │   └── email_sender.py    # 邮件报告发送
-│   ├── models/            # 数据模型
-│   └── utils/             # 工具函数
-├── frontend/              # 前端代码
-├── tests/                 # 测试代码
-├── config/                # 配置文件
-└── data/                  # 本地数据存储
+│   │   ├── price_fetcher.py       # 价格数据采集（yfinance + akshare）
+│   │   ├── collector.py           # 采集入库（价格获取→写入数据库）
+│   │   ├── analyzer.py            # 数据分析与计算
+│   │   ├── email_sender.py        # 邮件报告（HTML生成 + SMTP发送）
+│   │   └── monthly_job.py         # 月度任务编排（采集→分析→邮件）
+│   ├── agents/                    # Agent 逻辑（待开发）
+│   └── utils/                     # 工具函数
+├── frontend/
+│   ├── app.py                     # 主入口（导航 + 样式加载 + 邮件按钮）
+│   ├── pages/
+│   │   ├── dashboard.py           # 投资总览（指标卡片、涨跌卡片、明细表格）
+│   │   ├── manage.py              # 标的管理（添加标的、加仓减仓、数据采集）
+│   │   └── history.py             # 仓位变动记录
+│   ├── components/charts.py       # 图表组件
+│   ├── styles/main.css            # 全部 CSS 样式
+│   └── texts/zh_CN.py             # 全部中文文案
+├── tests/                         # 测试代码
+└── data/                          # 数据库文件（.db 被 .gitignore 忽略）
 ```
 
 ## 开发规范
 
 ### 代码风格
-- 遵循 PEP 8
-- 使用 type hints
-- 函数和类需要有简洁的 docstring
-- 变量/函数命名使用 snake_case，类命名使用 PascalCase
+- 遵循 PEP 8，使用 type hints
+- 注释和 docstring 用中文
+- 变量/函数 snake_case，类 PascalCase
+
+### 前端三层分离
+- **改文字** → 编辑 `frontend/texts/zh_CN.py`
+- **改样式** → 编辑 `frontend/styles/main.css`
+- **改逻辑** → 编辑 `frontend/pages/*.py`
 
 ### 工作流程
-- **稳健优先**：每一步都要确认可行再推进
-- 新功能先写测试，再写实现
-- 修改代码前先理解现有逻辑
+- **稳健优先**：方案先确认再动手，代码先测试再提交
+- 修改代码前先告知方案，获得用户同意后再执行
 - 不做过度设计，只实现当前需要的功能
 
 ### Git 规范
-- commit message 使用中文
-- 格式：`<类型>: <描述>`
+- commit message 中文，格式：`<类型>: <描述>`
 - 类型：feat / fix / refactor / docs / test / chore
+
+### 启动方式
+```bash
+cd E:\invest_anget
+set PYTHONPATH=E:\invest_anget
+streamlit run frontend/app.py
+```
+或双击 `启动面板.bat`
 
 ## 沟通约定
 
