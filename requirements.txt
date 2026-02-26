@@ -3,6 +3,7 @@ streamlit>=1.30.0
 
 # Data & Finance
 yfinance>=0.2.30
+akshare>=1.18.0
 pandas>=2.1.0
 
 # Database
