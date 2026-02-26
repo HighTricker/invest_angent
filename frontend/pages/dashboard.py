@@ -1,14 +1,13 @@
 """
 投资总览页面。
 
-展示投资组合的关键指标、标的明细表格和走势图表。
+展示投资组合的关键指标、各标的涨跌卡片和明细表格。
 """
 
 import streamlit as st
 import pandas as pd
 
 from frontend.texts import zh_CN as T
-from frontend.components.charts import render_cumulative_return_chart
 from src.models.database import get_connection
 from src.services.analyzer import analyze_portfolio
 
@@ -93,6 +92,31 @@ def render(db_path: str | None = None) -> None:
 
     st.markdown("---")
 
+    # ---- 各标的涨跌卡片 ----
+    # 每行4张卡片，涨绿跌红
+    COLS_PER_ROW = 4
+    analyses = summary.asset_analyses
+    for i in range(0, len(analyses), COLS_PER_ROW):
+        cols = st.columns(COLS_PER_ROW)
+        for j, col in enumerate(cols):
+            idx = i + j
+            if idx >= len(analyses):
+                break
+            a = analyses[idx]
+            ret = a.cumulative_return
+            color = "#00c853" if ret >= 0 else "#ff1744"
+            bg = "#e8f5e9" if ret >= 0 else "#ffebee"
+            col.markdown(
+                f'<div style="background:{bg};padding:16px;border-radius:10px;text-align:center">'
+                f'<div style="font-size:16px;font-weight:600;color:#333">{a.name}</div>'
+                f'<div style="font-size:20px;font-weight:700;color:{color};margin-top:4px">'
+                f'{ret:+.2%}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("---")
+
     # ---- 标的明细表格 ----
     st.subheader(T.TABLE_TITLE)
 
@@ -113,8 +137,3 @@ def render(db_path: str | None = None) -> None:
 
     df = pd.DataFrame(rows)
     st.dataframe(df, use_container_width=True, hide_index=True)
-
-    st.markdown("---")
-
-    # ---- 累计收益率走势图 ----
-    render_cumulative_return_chart(summary.asset_analyses, date_list, db_path)
