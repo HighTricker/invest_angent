@@ -93,27 +93,26 @@ def render(db_path: str | None = None) -> None:
     st.markdown("---")
 
     # ---- 各标的涨跌卡片 ----
-    # 每行4张卡片，涨绿跌红
+    # 样式与邮件报告中的卡片一致：灰底、小标签、大数字
     COLS_PER_ROW = 4
     analyses = summary.asset_analyses
-    for i in range(0, len(analyses), COLS_PER_ROW):
-        cols = st.columns(COLS_PER_ROW)
-        for j, col in enumerate(cols):
-            idx = i + j
-            if idx >= len(analyses):
-                break
-            a = analyses[idx]
-            ret = a.cumulative_return
-            color = "#00c853" if ret >= 0 else "#ff1744"
-            bg = "#e8f5e9" if ret >= 0 else "#ffebee"
-            col.markdown(
-                f'<div style="background:{bg};padding:16px;border-radius:10px;text-align:center">'
-                f'<div style="font-size:16px;font-weight:600;color:#333">{a.name}</div>'
-                f'<div style="font-size:20px;font-weight:700;color:{color};margin-top:4px">'
-                f'{ret:+.2%}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+
+    # 用一整块 HTML 渲染，确保样式一致
+    cards_html = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:8px 0">'
+    for a in analyses:
+        ret = a.cumulative_return
+        color = "#00c853" if ret >= 0 else "#ff1744"
+        cards_html += (
+            f'<div style="flex:1 1 calc(25% - 12px);min-width:160px;'
+            f'background:#f8f9fa;padding:16px 20px;border-radius:10px;'
+            f'text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)">'
+            f'<div style="color:#666;font-size:13px">{a.asset_type}</div>'
+            f'<div style="font-size:18px;font-weight:600;color:#333;margin:4px 0">{a.name}</div>'
+            f'<div style="font-size:20px;font-weight:700;color:{color}">{ret:+.2%}</div>'
+            f'</div>'
+        )
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
 
     st.markdown("---")
 
