@@ -126,46 +126,51 @@ def build_report_html(summary: PortfolioSummary, report_month: str) -> str:
             <td style="text-align:right;color:{monthly_color}">{monthly_str}</td>
         </tr>"""
 
-    # 各标的涨跌卡片（涨绿底，跌红底）
-    asset_cards = '<div style="margin:20px 0">'
-    for i, a in enumerate(summary.asset_analyses):
+    # 通用卡片生成函数（用 table 布局，兼容所有邮件客户端和移动端）
+    def _card(label: str, name: str, value_str: str, bg: str, color: str) -> str:
+        return (
+            f'<td style="width:33.33%;padding:6px">'
+            f'<div style="background:{bg};padding:12px 16px;border-radius:8px;text-align:center">'
+            f'<div style="color:#666;font-size:13px">{label}</div>'
+            f'<div style="font-size:18px;font-weight:600">{name}</div>'
+            f'<div style="color:{color};font-size:16px">{value_str}</div>'
+            f'</div></td>'
+        )
+
+    # 最佳/最差卡片
+    bw_cards = []
+    if summary.best_performer and summary.best_performer.monthly_return is not None:
+        b = summary.best_performer
+        bw_cards.append(_card("本月最佳", b.name, f"{b.monthly_return:+.2%}", "#e8f5e9", "#00c853"))
+    if summary.worst_performer and summary.worst_performer.monthly_return is not None:
+        w = summary.worst_performer
+        bw_cards.append(_card("本月最差", w.name, f"{w.monthly_return:+.2%}", "#ffebee", "#ff1744"))
+
+    best_worst_html = ""
+    if bw_cards:
+        best_worst_html = '<table style="width:100%;border-collapse:collapse"><tr>'
+        best_worst_html += "".join(bw_cards)
+        best_worst_html += '</tr></table>'
+
+    # 各标的涨跌卡片（每行3张，table 布局自适应）
+    all_cards = []
+    for a in summary.asset_analyses:
         ret = a.cumulative_return
         bg = "#e8f5e9" if ret >= 0 else "#ffebee"
         color = "#00c853" if ret >= 0 else "#ff1744"
-        asset_cards += (
-            f'<div style="display:inline-block;background:{bg};padding:12px 20px;'
-            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
-            f'<div style="color:#666;font-size:13px">{a.asset_type}</div>'
-            f'<div style="font-size:18px;font-weight:600">{a.name}</div>'
-            f'<div style="color:{color};font-size:16px">{ret:+.2%}</div>'
-            f'</div>'
-        )
-    asset_cards += '</div>'
+        all_cards.append(_card(a.asset_type, a.name, f"{ret:+.2%}", bg, color))
 
-    # 最佳/最差
-    best_section = ""
-    if summary.best_performer and summary.best_performer.monthly_return is not None:
-        b = summary.best_performer
-        best_section = (
-            f'<div style="display:inline-block;background:#e8f5e9;padding:12px 20px;'
-            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
-            f'<div style="color:#666;font-size:13px">本月最佳</div>'
-            f'<div style="font-size:18px;font-weight:600">{b.name}</div>'
-            f'<div style="color:#00c853;font-size:16px">{b.monthly_return:+.2%}</div>'
-            f'</div>'
-        )
-
-    worst_section = ""
-    if summary.worst_performer and summary.worst_performer.monthly_return is not None:
-        w = summary.worst_performer
-        worst_section = (
-            f'<div style="display:inline-block;background:#ffebee;padding:12px 20px;'
-            f'border-radius:8px;margin:0 12px 12px 0;text-align:center;min-width:140px">'
-            f'<div style="color:#666;font-size:13px">本月最差</div>'
-            f'<div style="font-size:18px;font-weight:600">{w.name}</div>'
-            f'<div style="color:#ff1744;font-size:16px">{w.monthly_return:+.2%}</div>'
-            f'</div>'
-        )
+    COLS = 3
+    asset_cards = '<table style="width:100%;border-collapse:collapse">'
+    for i in range(0, len(all_cards), COLS):
+        asset_cards += '<tr>'
+        for j in range(COLS):
+            if i + j < len(all_cards):
+                asset_cards += all_cards[i + j]
+            else:
+                asset_cards += '<td style="width:33.33%"></td>'
+        asset_cards += '</tr>'
+    asset_cards += '</table>'
 
     html = f"""
 <!DOCTYPE html>
@@ -178,37 +183,40 @@ def build_report_html(summary: PortfolioSummary, report_month: str) -> str:
         {month_str} 投资月报
     </h1>
 
-    <!-- 组合概况 -->
+    <!-- 组合概况（2×2 网格，移动端友好） -->
     <table style="width:100%;border-collapse:collapse;margin:20px 0">
         <tr>
-            <td style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
-                <div style="color:#666;font-size:13px">总投入</div>
-                <div style="font-size:22px;font-weight:700">${summary.total_invested:,.2f}</div>
-            </td>
-            <td style="width:12px"></td>
-            <td style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
-                <div style="color:#666;font-size:13px">总当前价值</div>
-                <div style="font-size:22px;font-weight:700">${summary.total_current_value:,.2f}</div>
-            </td>
-            <td style="width:12px"></td>
-            <td style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
-                <div style="color:#666;font-size:13px">总收益率</div>
-                <div style="font-size:22px;font-weight:700;color:{return_color}">
-                    {summary.total_return:+.2%}
+            <td style="width:50%;padding:6px">
+                <div style="text-align:center;padding:14px;background:#f8f9fa;border-radius:8px">
+                    <div style="color:#666;font-size:13px">总投入</div>
+                    <div style="font-size:20px;font-weight:700">${summary.total_invested:,.2f}</div>
                 </div>
             </td>
-            <td style="width:12px"></td>
-            <td style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
-                <div style="color:#666;font-size:13px">盈亏</div>
-                <div style="font-size:22px;font-weight:700;color:{pl_color}">
-                    ${summary.total_profit_loss:+,.2f}
+            <td style="width:50%;padding:6px">
+                <div style="text-align:center;padding:14px;background:#f8f9fa;border-radius:8px">
+                    <div style="color:#666;font-size:13px">总当前价值</div>
+                    <div style="font-size:20px;font-weight:700">${summary.total_current_value:,.2f}</div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width:50%;padding:6px">
+                <div style="text-align:center;padding:14px;background:#f8f9fa;border-radius:8px">
+                    <div style="color:#666;font-size:13px">总收益率</div>
+                    <div style="font-size:20px;font-weight:700;color:{return_color}">{summary.total_return:+.2%}</div>
+                </div>
+            </td>
+            <td style="width:50%;padding:6px">
+                <div style="text-align:center;padding:14px;background:#f8f9fa;border-radius:8px">
+                    <div style="color:#666;font-size:13px">盈亏</div>
+                    <div style="font-size:20px;font-weight:700;color:{pl_color}">${summary.total_profit_loss:+,.2f}</div>
                 </div>
             </td>
         </tr>
     </table>
 
     <!-- 最佳/最差 -->
-    {best_section}{worst_section}
+    {best_worst_html}
 
     <!-- 各标的涨跌卡片 -->
     {asset_cards}
