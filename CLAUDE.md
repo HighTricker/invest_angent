@@ -19,6 +19,8 @@
 - [x] 11个标的已录入，每个 $1 初始仓位，2025-12 ~ 2026-02 历史数据已采集
 - [x] 一键启动 bat 脚本（启动面板.bat）
 - [x] 侧边栏一键发送邮件按钮
+- [x] GitHub 仓库上传（公开，https://github.com/HighTricker/invest_angent）
+- [x] README.md（中英双语，含功能介绍、快速开始、项目结构）
 
 ### 待开发（后期扩展）
 - [ ] 部署到云服务器 + cron 定时任务
@@ -60,14 +62,14 @@
 ## 项目结构
 
 ```
-invest_anget/
+invest_angent/
 ├── CLAUDE.md                      # 项目说明（本文件）
+├── README.md                      # GitHub 项目说明（中英双语）
 ├── .env                           # SMTP 配置（不提交 Git）
 ├── .env.example                   # 配置模板
 ├── requirements.txt               # Python 依赖
 ├── run_monthly.py                 # 定时任务入口脚本
 ├── 启动面板.bat                    # 双击启动 Streamlit
-├── 投资跟踪表格.xlsx               # 原始表格（参考用）
 ├── src/
 │   ├── models/
 │   │   └── database.py            # 数据库初始化与连接
@@ -115,8 +117,8 @@ invest_anget/
 
 ### 启动方式
 ```bash
-cd E:\invest_anget
-set PYTHONPATH=E:\invest_anget
+cd E:\invest_angent
+set PYTHONPATH=E:\invest_angent
 streamlit run frontend/app.py
 ```
 或双击 `启动面板.bat`
