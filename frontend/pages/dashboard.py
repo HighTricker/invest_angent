@@ -70,45 +70,53 @@ def render(db_path: str | None = None) -> None:
             f"${summary.total_profit_loss:+,.2f}",
         )
 
-    # ---- 最佳/最差标的 ----
-    if summary.best_performer or summary.worst_performer:
-        col_best, col_worst = st.columns(2)
-        if summary.best_performer:
-            b = summary.best_performer
-            with col_best:
-                st.metric(
-                    T.BEST_PERFORMER,
-                    b.name,
-                    f"{b.monthly_return:+.2%}" if b.monthly_return is not None else "-",
-                )
-        if summary.worst_performer:
-            w = summary.worst_performer
-            with col_worst:
-                st.metric(
-                    T.WORST_PERFORMER,
-                    w.name,
-                    f"{w.monthly_return:+.2%}" if w.monthly_return is not None else "-",
-                )
-
-    st.markdown("---")
-
-    # ---- 各标的涨跌卡片 ----
-    # 样式与邮件报告中的卡片一致：灰底、小标签、大数字
-    COLS_PER_ROW = 4
-    analyses = summary.asset_analyses
-
-    # 用一整块 HTML 渲染，确保样式一致
+    # ---- 最佳/最差 + 各标的涨跌卡片 ----
+    # 完全采用邮件报告中的 HTML 卡片样式
     cards_html = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:8px 0">'
-    for a in analyses:
+
+    # 最佳标的卡片
+    if summary.best_performer and summary.best_performer.monthly_return is not None:
+        b = summary.best_performer
+        cards_html += (
+            f'<div style="display:inline-block;background:#e8f5e9;padding:12px 20px;'
+            f'border-radius:8px;text-align:center;min-width:160px;'
+            f'flex:1 1 calc(25% - 12px)">'
+            f'<div style="color:#666;font-size:13px">{T.BEST_PERFORMER}</div>'
+            f'<div style="font-size:18px;font-weight:600">{b.name}</div>'
+            f'<div style="color:#00c853;font-size:16px">{b.monthly_return:+.2%}</div>'
+            f'</div>'
+        )
+
+    # 最差标的卡片
+    if summary.worst_performer and summary.worst_performer.monthly_return is not None:
+        w = summary.worst_performer
+        cards_html += (
+            f'<div style="display:inline-block;background:#ffebee;padding:12px 20px;'
+            f'border-radius:8px;text-align:center;min-width:160px;'
+            f'flex:1 1 calc(25% - 12px)">'
+            f'<div style="color:#666;font-size:13px">{T.WORST_PERFORMER}</div>'
+            f'<div style="font-size:18px;font-weight:600">{w.name}</div>'
+            f'<div style="color:#ff1744;font-size:16px">{w.monthly_return:+.2%}</div>'
+            f'</div>'
+        )
+
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+    st.markdown("")
+
+    # 各标的卡片
+    cards_html = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:8px 0">'
+    for a in summary.asset_analyses:
         ret = a.cumulative_return
         color = "#00c853" if ret >= 0 else "#ff1744"
         cards_html += (
-            f'<div style="flex:1 1 calc(25% - 12px);min-width:160px;'
-            f'background:#f8f9fa;padding:16px 20px;border-radius:10px;'
-            f'text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)">'
+            f'<div style="display:inline-block;background:#f8f9fa;padding:12px 20px;'
+            f'border-radius:8px;text-align:center;min-width:160px;'
+            f'flex:1 1 calc(25% - 12px)">'
             f'<div style="color:#666;font-size:13px">{a.asset_type}</div>'
-            f'<div style="font-size:18px;font-weight:600;color:#333;margin:4px 0">{a.name}</div>'
-            f'<div style="font-size:20px;font-weight:700;color:{color}">{ret:+.2%}</div>'
+            f'<div style="font-size:18px;font-weight:600">{a.name}</div>'
+            f'<div style="color:{color};font-size:16px">{ret:+.2%}</div>'
             f'</div>'
         )
     cards_html += '</div>'
