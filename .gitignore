@@ -29,8 +29,11 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data cache
-data/cache/
+# Data directory (database + generated files)
+data/
+
+# Claude Code
+.claude/
 
 # Logs
 *.log
