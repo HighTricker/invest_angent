@@ -1,0 +1,84 @@
+/* ============================================================
+   Invest Agent - 全局样式
+   修改颜色、字号、间距等只需编辑此文件，无需改动代码。
+   ============================================================ */
+
+/* --- 全局 --- */
+.main .block-container {
+    padding-top: 2rem;
+    max-width: 1200px;
+}
+
+/* --- 页面标题 --- */
+h1 {
+    color: #1a1a2e;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    color: #16213e;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.4rem;
+    margin-top: 2rem;
+}
+
+/* --- 指标卡片 --- */
+[data-testid="stMetric"] {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* --- 涨跌颜色 --- */
+.positive {
+    color: #00c853;
+    font-weight: 600;
+}
+
+.negative {
+    color: #ff1744;
+    font-weight: 600;
+}
+
+/* --- 表格 --- */
+[data-testid="stDataFrame"] {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* --- 侧边栏 --- */
+[data-testid="stSidebar"] {
+    background: #f0f2f6;
+}
+
+[data-testid="stSidebar"] h1 {
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+/* --- 按钮 --- */
+.stButton > button {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* --- 成功/错误消息 --- */
+[data-testid="stAlert"] {
+    border-radius: 8px;
+}
+
+/* --- 分割线 --- */
+hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1.5rem 0;
+}
